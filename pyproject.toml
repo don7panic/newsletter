@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "newsletter"
+version = "0.1.0"
+description = "Local Newsletter generator for Hacker News and GitHub Trending."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "requests>=2.31.0,<3.0.0",
+  "beautifulsoup4>=4.12.0,<5.0.0",
+]
+
+[project.scripts]
+newsletter = "main:main"
+
+[tool.setuptools]
+py-modules = ["config", "main"]
+packages = ["fetchers", "renderers", "storage"]
