@@ -15,14 +15,15 @@
 
 ### GitHub Trending
 
-- 主方案：直接抓 GitHub 官方 Trending 页面
+- 主方案：Trending 页面 + GitHub repo API 补充详情
 - 地址：`https://github.com/trending?since=daily`
+- 详情接口：`https://api.github.com/repos/{owner}/{repo}`
 - 实现：`requests` + `BeautifulSoup`
 
 原因：
 
-- 最简单
-- 最可控
+- 保留官方 Trending 排序和 `stars today`
+- 用 repo API 补足更稳定的仓库详情字段
 - 适合本地定时任务
 
 不使用第三方预生成 API 作为主数据源。
@@ -84,6 +85,8 @@ newsletter/
   - `language`
   - `stars_today`
   - `description`
+  - `stars_total`
+  - `forks`
 
 ## Markdown 输出
 
@@ -115,7 +118,7 @@ Generated at: YYYY-MM-DD HH:MM:SS
 - 一个文件包含两个 section
 - 格式固定，方便后续解析
 - HN 摘要第一版允许为空
-- GitHub Trending 直接使用 `description`
+- GitHub Trending 优先使用 repo API 的 `description`，页面字段作为回退
 
 ## 模块职责
 

@@ -45,7 +45,7 @@ def _render_trending_items(items: list[dict]) -> list[str]:
             [
                 f"{index}. [{repo_name}]({url})",
                 f"   - Language: {language}",
-                f"   - Stars today: {stars_today if stars_today is not None else ''}",
+                f"   - ⭐ today: {stars_today if stars_today is not None else ''}",
                 f"   - Description: {description}",
                 "",
             ]

@@ -18,8 +18,5 @@ env/
 .ruff_cache/
 .coverage
 
-# Local generated output
-/daily/*.md
-
 # OS files
 .DS_Store
