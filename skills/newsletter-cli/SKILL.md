@@ -1,11 +1,9 @@
 ---
 name: newsletter-cli
-description: Use when the user wants to generate today's newsletter, inspect today's digest Markdown, or troubleshoot a failed installed `newsletter` CLI run.
+description: Use when the user wants to generate today's newsletter, inspect today's rendered newsletter Markdown, or troubleshoot a failed installed `newsletter` CLI run.
 ---
 
 # Newsletter CLI
-
-Use this skill when the user wants to run the installed `newsletter` command, inspect today's output, or debug a failed run.
 
 ## Context
 
@@ -25,12 +23,6 @@ User request notes: `$ARGUMENTS`
 
 `newsletter --version 2>&1 || echo "version_check_failed"`
 
-- Typical installed CLI commands:
-  - `newsletter generate`
-  - `newsletter status`
-  - `newsletter show`
-  - `newsletter --version`
-
 ## Ground Truth
 
 - Installed CLI command: `newsletter`
@@ -46,8 +38,6 @@ User request notes: `$ARGUMENTS`
 - Current rendered section order is `GitHub Trending` first, then `Hacker News`
 - If both sources fail, the CLI exits non-zero
 - If one source fails, partial output is acceptable and the file should still be written
-
-Do not introduce or rely on additional helper scripts; the installed CLI surface above is sufficient.
 
 Do not suggest or run `uv run newsletter` as part of this skill. Use the installed CLI surface above. If the user wants source-level debugging of a repository checkout, handle that as a separate code task rather than as installed-CLI validation.
 
@@ -65,9 +55,9 @@ Run status to confirm generation result:
 
 `newsletter status 2>&1`
 
-### Step 3: Read Today's Digest File
+### Step 3: Read Today's Newsletter File
 
-Read the generated digest file using the CLI:
+Read the generated newsletter file using the CLI:
 
 `newsletter show 2>&1`
 
@@ -82,7 +72,7 @@ Use the injected command output above to:
    - `partial` - One source failed but file was still written
    - `failure` - Both sources failed or file write failed
 
-3. **Verify Digest File**: Check if `./daily/$CURRENT_DATE.md` exists (if Step 3 output is "FILE_NOT_FOUND", the file is missing).
+3. **Verify Newsletter File**: Check if `./daily/$CURRENT_DATE.md` exists (if Step 3 output is "FILE_NOT_FOUND", the file is missing).
 
 4. **Validate Content**: If file exists, verify it contains:
    - `# Newsletter - YYYY-MM-DD` (correct date header)
@@ -98,13 +88,20 @@ Use the injected command output above to:
    - Network or upstream fetch failure
    - Render or file-write failure
 
+7. **Show Today's Content**: If the newsletter file exists, explicitly display the newsletter content from `newsletter show`.
+   - Do not summarize, compress, or pick highlights
+   - Do not omit items from either section
+   - Preserve the rendered section order: `GitHub Trending` first, then `Hacker News`
+   - Do not paraphrase, translate, rewrite, or reformat the newsletter body
+   - Put the full `newsletter show` output inside a fenced `md` code block
+   - If there is any conflict with general brevity guidance, prefer showing the full newsletter body
+
 ## Response Format
 
-Provide a concise summary:
+Provide a short validation header followed by the full newsletter content when available:
 - **Status**: success / partial / failure
-- **File**: Path to today's digest and whether it exists
+- **File**: Path to today's newsletter file and whether it exists
 - **Content Check**: List of required sections found/missing
 - **Issues**: Any failures or warnings detected
 - **Action**: Recommended next step if needed
-
-Do not imply that helper scripts are user-facing CLI commands; use the CLI surface above.
+- **Today's Newsletter**: If the file exists, include the exact output from `newsletter show` in a fenced `md` code block
