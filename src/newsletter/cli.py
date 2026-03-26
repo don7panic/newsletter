@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import re
 from importlib.metadata import PackageNotFoundError, version as package_version
 from pathlib import Path
@@ -10,8 +11,10 @@ from newsletter.digest import (
     get_now,
     get_output_path,
     inspect_digest,
-    log,
 )
+from newsletter.logging_config import configure_logging
+
+LOGGER = logging.getLogger(__name__)
 
 
 def get_cli_version() -> str:
@@ -47,13 +50,13 @@ def command_status(_: argparse.Namespace) -> int:
 def command_show(_: argparse.Namespace) -> int:
     output_path = get_output_path()
     if not output_path.exists():
-        log("ERROR", f"Newsletter file does not exist: {output_path}")
+        LOGGER.error("Newsletter file does not exist: %s", output_path)
         return 1
 
     try:
         print(output_path.read_text(encoding="utf-8"), end="")
     except OSError as exc:
-        log("ERROR", f"Failed to read newsletter file: {exc}")
+        LOGGER.error("Failed to read newsletter file: %s", exc)
         return 1
 
     return 0
@@ -96,6 +99,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    configure_logging()
     parser = build_parser()
     args = parser.parse_args(argv)
 

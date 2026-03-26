@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import sys
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -18,9 +18,7 @@ class DigestInspection:
     detail: str
 
 
-def log(level: str, message: str) -> None:
-    stream = sys.stderr if level == "ERROR" else sys.stdout
-    print(f"[{level}] {message}", file=stream)
+LOGGER = logging.getLogger(__name__)
 
 
 def get_now() -> datetime:
@@ -112,21 +110,21 @@ def generate_digest(now: datetime | None = None) -> int:
     trending_items: list[dict] = []
 
     try:
-        log("INFO", "Fetching Hacker News items")
+        LOGGER.info("Fetching Hacker News items")
         hn_items = fetch_hn(config.DEFAULT_ITEM_LIMIT)
-        log("INFO", f"Fetched {len(hn_items)} Hacker News items")
+        LOGGER.info("Fetched %s Hacker News items", len(hn_items))
     except Exception as exc:
-        log("ERROR", f"Hacker News fetch failed: {exc}")
+        LOGGER.error("Hacker News fetch failed: %s", exc)
 
     try:
-        log("INFO", "Fetching GitHub Trending items")
+        LOGGER.info("Fetching GitHub Trending items")
         trending_items = fetch_github_trending(config.DEFAULT_ITEM_LIMIT)
-        log("INFO", f"Fetched {len(trending_items)} GitHub Trending items")
+        LOGGER.info("Fetched %s GitHub Trending items", len(trending_items))
     except Exception as exc:
-        log("ERROR", f"GitHub Trending fetch failed: {exc}")
+        LOGGER.error("GitHub Trending fetch failed: %s", exc)
 
     if not hn_items and not trending_items:
-        log("ERROR", "Both sources failed; newsletter was not generated")
+        LOGGER.error("Both sources failed; newsletter was not generated")
         return 1
 
     output_path = get_output_path(current_time)
@@ -140,8 +138,8 @@ def generate_digest(now: datetime | None = None) -> int:
         )
         write_output(str(output_path), markdown)
     except Exception as exc:
-        log("ERROR", f"Failed to render or write newsletter: {exc}")
+        LOGGER.error("Failed to render or write newsletter: %s", exc)
         return 1
 
-    log("INFO", f"Wrote newsletter to {output_path}")
+    LOGGER.info("Wrote newsletter to %s", output_path)
     return 0
