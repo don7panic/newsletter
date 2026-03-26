@@ -2,7 +2,7 @@
 
 [中文说明](README.zh-CN.md)
 
-Local-first CLI for generating a daily Markdown tech digest from GitHub Trending and Hacker News.
+Local-first CLI for generating a daily Markdown tech newsletter from GitHub Trending and Hacker News.
 
 ```text
 daily/YYYY-MM-DD.md
@@ -10,7 +10,7 @@ daily/YYYY-MM-DD.md
 
 ## What It Does
 
-- Generates a daily digest in the directory where you run the CLI
+- Generates a daily newsletter in the directory where you run the CLI
 - Renders `GitHub Trending` first, then `Hacker News`
 - Overwrites the same day's file on re-run
 - Writes partial output if one source fails
@@ -39,19 +39,19 @@ If you prefer not to install the tool, you can run it from the repo with `uv run
 
 ## Quick Start
 
-Generate today's digest:
+Generate today's newsletter:
 
 ```bash
 newsletter generate
 ```
 
-Check whether today's digest exists and looks complete:
+Check whether today's newsletter exists and looks complete:
 
 ```bash
 newsletter status
 ```
 
-Print today's digest Markdown:
+Print today's newsletter Markdown:
 
 ```bash
 newsletter show
@@ -69,9 +69,9 @@ newsletter
 
 ## Command Surface
 
-- `newsletter generate`: fetch data and write today's digest
-- `newsletter status`: inspect today's digest file
-- `newsletter show`: print today's digest content
+- `newsletter generate`: fetch data and write today's newsletter
+- `newsletter status`: inspect today's newsletter file
+- `newsletter show`: print today's newsletter content
 - `newsletter --help`: show CLI help
 - `newsletter --version`: show installed CLI version
 

@@ -67,12 +67,12 @@ def section_has_no_items(lines: list[str]) -> bool:
 
 def inspect_digest(path: Path, now: datetime | None = None) -> DigestInspection:
     if not path.exists():
-        return DigestInspection("missing", "Digest file does not exist.")
+        return DigestInspection("missing", "Newsletter file does not exist.")
 
     try:
         content = path.read_text(encoding="utf-8")
     except OSError as exc:
-        return DigestInspection("invalid", f"Failed to read digest file: {exc}")
+        return DigestInspection("invalid", f"Failed to read newsletter file: {exc}")
 
     date_str, _ = get_timestamp_strings(now)
     required_markers = (
@@ -85,7 +85,7 @@ def inspect_digest(path: Path, now: datetime | None = None) -> DigestInspection:
     if missing_markers:
         return DigestInspection(
             "invalid",
-            "Digest file is missing required content: "
+            "Newsletter file is missing required content: "
             + ", ".join(missing_markers),
         )
 
@@ -101,7 +101,7 @@ def inspect_digest(path: Path, now: datetime | None = None) -> DigestInspection:
             "Sections with no items: " + ", ".join(empty_sections),
         )
 
-    return DigestInspection("success", "Digest file exists and includes both sections.")
+    return DigestInspection("success", "Newsletter file exists and includes both sections.")
 
 
 def generate_digest(now: datetime | None = None) -> int:
@@ -126,7 +126,7 @@ def generate_digest(now: datetime | None = None) -> int:
         log("ERROR", f"GitHub Trending fetch failed: {exc}")
 
     if not hn_items and not trending_items:
-        log("ERROR", "Both sources failed; digest was not generated")
+        log("ERROR", "Both sources failed; newsletter was not generated")
         return 1
 
     output_path = get_output_path(current_time)
@@ -140,8 +140,8 @@ def generate_digest(now: datetime | None = None) -> int:
         )
         write_output(str(output_path), markdown)
     except Exception as exc:
-        log("ERROR", f"Failed to render or write digest: {exc}")
+        log("ERROR", f"Failed to render or write newsletter: {exc}")
         return 1
 
-    log("INFO", f"Wrote digest to {output_path}")
+    log("INFO", f"Wrote newsletter to {output_path}")
     return 0

@@ -6,7 +6,7 @@ Guidance for agents working in this repository.
 
 These project-local skills should be used when their description matches the task.
 
-- `newsletter-cli`: Run the installed `newsletter` command, inspect today's generated digest Markdown, or troubleshoot a failed installed CLI run. (file: `./skills/newsletter-cli/SKILL.md`)
+- `newsletter-cli`: Run the installed `newsletter` command, inspect today's generated newsletter Markdown, or troubleshoot a failed installed CLI run. (file: `./skills/newsletter-cli/SKILL.md`)
 
 ## Read This First
 

@@ -47,13 +47,13 @@ def command_status(_: argparse.Namespace) -> int:
 def command_show(_: argparse.Namespace) -> int:
     output_path = get_output_path()
     if not output_path.exists():
-        log("ERROR", f"Digest file does not exist: {output_path}")
+        log("ERROR", f"Newsletter file does not exist: {output_path}")
         return 1
 
     try:
         print(output_path.read_text(encoding="utf-8"), end="")
     except OSError as exc:
-        log("ERROR", f"Failed to read digest file: {exc}")
+        log("ERROR", f"Failed to read newsletter file: {exc}")
         return 1
 
     return 0
@@ -62,7 +62,7 @@ def command_show(_: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="newsletter",
-        description="Generate and inspect the daily tech digest.",
+        description="Generate and inspect the daily tech newsletter.",
     )
     parser.add_argument(
         "--version",
@@ -73,22 +73,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     generate_parser = subparsers.add_parser(
         "generate",
-        help="Generate today's digest.",
-        description="Fetch GitHub Trending and Hacker News and write today's digest.",
+        help="Generate today's newsletter.",
+        description="Fetch GitHub Trending and Hacker News and write today's newsletter.",
     )
     generate_parser.set_defaults(handler=command_generate)
 
     status_parser = subparsers.add_parser(
         "status",
-        help="Check today's digest status.",
-        description="Report whether today's digest exists and whether it looks complete.",
+        help="Check today's newsletter status.",
+        description="Report whether today's newsletter exists and whether it looks complete.",
     )
     status_parser.set_defaults(handler=command_status)
 
     show_parser = subparsers.add_parser(
         "show",
-        help="Print today's digest.",
-        description="Print today's digest Markdown file to stdout.",
+        help="Print today's newsletter.",
+        description="Print today's newsletter Markdown file to stdout.",
     )
     show_parser.set_defaults(handler=command_show)
 

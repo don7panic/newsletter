@@ -118,7 +118,7 @@ class MainCLITest(unittest.TestCase):
         self.assertIn("# Newsletter - 2026-03-26", content)
         self.assertIn("## GitHub Trending", content)
         self.assertIn("## Hacker News", content)
-        self.assertIn(f"Wrote digest to {digest_path}", stdout)
+        self.assertIn(f"Wrote newsletter to {digest_path}", stdout)
         self.assertEqual(stderr, "")
 
     def test_generate_allows_partial_output(self) -> None:
@@ -132,7 +132,7 @@ class MainCLITest(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         self.assertTrue(digest_path.exists())
-        self.assertIn(f"Wrote digest to {digest_path}", stdout)
+        self.assertIn(f"Wrote newsletter to {digest_path}", stdout)
         self.assertIn("Hacker News fetch failed: HN unavailable", stderr)
         self.assertIn("No items fetched.", digest_path.read_text(encoding="utf-8"))
 
@@ -147,7 +147,7 @@ class MainCLITest(unittest.TestCase):
         self.assertFalse(digest.get_output_path(FIXED_NOW).exists())
         self.assertIn("Fetching Hacker News items", stdout)
         self.assertIn("Fetching GitHub Trending items", stdout)
-        self.assertIn("Both sources failed; digest was not generated", stderr)
+        self.assertIn("Both sources failed; newsletter was not generated", stderr)
 
     def test_status_reports_success(self) -> None:
         digest_path = self.write_digest(
@@ -208,4 +208,4 @@ class MainCLITest(unittest.TestCase):
 
         self.assertEqual(exit_code, 1)
         self.assertEqual(stdout, "")
-        self.assertIn("Digest file does not exist", stderr)
+        self.assertIn("Newsletter file does not exist", stderr)

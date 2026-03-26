@@ -2,7 +2,7 @@
 
 [English README](README.md)
 
-一个本地优先的命令行工具，用来抓取 GitHub Trending 和 Hacker News，并生成稳定的 Markdown 日报。
+一个本地优先的命令行工具，用来抓取 GitHub Trending 和 Hacker News，并生成稳定的 Markdown newsletter。
 
 ```text
 daily/YYYY-MM-DD.md
@@ -10,7 +10,7 @@ daily/YYYY-MM-DD.md
 
 ## 项目作用
 
-- 在你执行 CLI 的当前目录生成每日简报
+- 在你执行 CLI 的当前目录生成每日 newsletter
 - 输出顺序固定为 `GitHub Trending` 在前，`Hacker News` 在后
 - 同一天重复执行会覆盖当日文件
 - 单个数据源失败时，仍允许输出部分结果
@@ -39,19 +39,19 @@ newsletter --help
 
 ## 快速开始
 
-生成今天的日报：
+生成今天的 newsletter：
 
 ```bash
 newsletter generate
 ```
 
-检查今天的日报是否存在、是否完整：
+检查今天的 newsletter 是否存在、是否完整：
 
 ```bash
 newsletter status
 ```
 
-打印今天的 Markdown 日报：
+打印今天的 Markdown newsletter：
 
 ```bash
 newsletter show
@@ -69,9 +69,9 @@ newsletter
 
 ## 命令列表
 
-- `newsletter generate`：抓取数据并写入今天的日报
-- `newsletter status`：检查今天的日报文件状态
-- `newsletter show`：打印今天的日报内容
+- `newsletter generate`：抓取数据并写入今天的 newsletter
+- `newsletter status`：检查今天的 newsletter 文件状态
+- `newsletter show`：打印今天的 newsletter 内容
 - `newsletter --help`：显示 CLI 帮助
 - `newsletter --version`：显示已安装 CLI 的版本
 
