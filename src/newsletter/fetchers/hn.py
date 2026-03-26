@@ -5,7 +5,7 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 
-import config
+from newsletter import config
 
 
 SUMMARY_MAX_LENGTH = 280

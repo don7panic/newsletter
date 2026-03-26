@@ -3,13 +3,15 @@
 ## 1. 初始化
 
 - 创建目录：
-  - `fetchers/`
-  - `renderers/`
-  - `storage/`
+  - `src/newsletter/fetchers/`
+  - `src/newsletter/renderers/`
+  - `src/newsletter/storage/`
   - `daily/`
 - 创建文件：
   - `main.py`
-  - `config.py`
+  - `src/newsletter/config.py`
+  - `src/newsletter/cli.py`
+  - `src/newsletter/digest.py`
   - `pyproject.toml`
 
 完成标准：

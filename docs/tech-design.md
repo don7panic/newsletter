@@ -48,14 +48,18 @@
 newsletter/
   pyproject.toml
   main.py
-  config.py
-  fetchers/
-    hn.py
-    github_trending.py
-  renderers/
-    markdown.py
-  storage/
-    writer.py
+  src/
+    newsletter/
+      cli.py
+      digest.py
+      config.py
+      fetchers/
+        hn.py
+        github_trending.py
+      renderers/
+        markdown.py
+      storage/
+        writer.py
   daily/
   docs/
 ```
@@ -95,19 +99,19 @@ newsletter/
 ```md
 # Newsletter - YYYY-MM-DD
 
-## Hacker News
-
-1. [Title](URL)
-   - 123 points, 45 comments
-   - HN: ...
-   - Summary: ...
-
 ## GitHub Trending
 
 1. [owner/repo](URL)
    - Language: Python
    - Stars today: 1234
    - Description: ...
+
+## Hacker News
+
+1. [Title](URL)
+   - 123 points, 45 comments
+   - HN: ...
+   - Summary: ...
 
 ---
 Generated at: YYYY-MM-DD HH:MM:SS
@@ -122,11 +126,13 @@ Generated at: YYYY-MM-DD HH:MM:SS
 
 ## 模块职责
 
-- `main.py`：串联流程
-- `fetchers/hn.py`：抓 HN
-- `fetchers/github_trending.py`：抓 Trending 页面
-- `renderers/markdown.py`：生成 Markdown
-- `storage/writer.py`：写文件
+- `main.py`：开发期入口包装器
+- `src/newsletter/cli.py`：CLI 参数解析与命令分发
+- `src/newsletter/digest.py`：主流程编排与日报检查
+- `src/newsletter/fetchers/hn.py`：抓 HN
+- `src/newsletter/fetchers/github_trending.py`：抓 Trending 页面
+- `src/newsletter/renderers/markdown.py`：生成 Markdown
+- `src/newsletter/storage/writer.py`：写文件
 
 ## 错误处理
 

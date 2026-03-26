@@ -14,8 +14,10 @@ dependencies = [
 ]
 
 [project.scripts]
-newsletter = "main:main"
+newsletter = "newsletter.cli:main"
 
 [tool.setuptools]
-py-modules = ["config", "main"]
-packages = ["fetchers", "renderers", "storage"]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -7,7 +7,7 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup, Tag
 
-import config
+from newsletter import config
 
 
 def _now_string() -> str:
