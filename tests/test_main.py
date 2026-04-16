@@ -47,6 +47,27 @@ def make_trending_item() -> dict:
     }
 
 
+def make_x_author_items() -> dict[str, list[dict]]:
+    return {
+        "karpathy": [
+            {
+                "title": "@karpathy",
+                "url": "https://x.com/karpathy/status/1",
+                "summary": "A post from Karpathy.",
+                "meta": {
+                    "author_name": "Andrej Karpathy",
+                    "username": "karpathy",
+                    "created_at": "2026-03-26T09:00:00Z",
+                    "like_count": 10,
+                    "reply_count": 2,
+                    "retweet_count": 3,
+                    "quote_count": 1,
+                },
+            }
+        ]
+    }
+
+
 class MainCLITest(unittest.TestCase):
     def setUp(self) -> None:
         self.tempdir = tempfile.TemporaryDirectory()
@@ -54,14 +75,17 @@ class MainCLITest(unittest.TestCase):
 
         output_dir = Path(self.tempdir.name) / "daily"
         output_patch = patch.object(digest.config, "OUTPUT_DIR", str(output_dir))
+        x_enabled_patch = patch.object(digest.config, "X_ENABLED", False)
         digest_now_patch = patch("newsletter.digest.get_now", return_value=FIXED_NOW)
         cli_now_patch = patch("newsletter.cli.get_now", return_value=FIXED_NOW)
 
         output_patch.start()
+        x_enabled_patch.start()
         digest_now_patch.start()
         cli_now_patch.start()
 
         self.addCleanup(output_patch.stop)
+        self.addCleanup(x_enabled_patch.stop)
         self.addCleanup(digest_now_patch.stop)
         self.addCleanup(cli_now_patch.stop)
 
@@ -72,7 +96,13 @@ class MainCLITest(unittest.TestCase):
             exit_code = main.main(argv)
         return exit_code, stdout.getvalue(), stderr.getvalue()
 
-    def write_digest(self, *, hn_items: list[dict], trending_items: list[dict]) -> Path:
+    def write_digest(
+        self,
+        *,
+        hn_items: list[dict],
+        trending_items: list[dict],
+        x_items_by_author: dict[str, list[dict]] | None = None,
+    ) -> Path:
         digest_path = digest.get_output_path(FIXED_NOW)
         digest_path.parent.mkdir(parents=True, exist_ok=True)
         digest_path.write_text(
@@ -80,6 +110,7 @@ class MainCLITest(unittest.TestCase):
                 date_str="2026-03-26",
                 hn_items=hn_items,
                 trending_items=trending_items,
+                x_items_by_author=x_items_by_author,
                 generated_at="2026-03-26 09:30:00",
             ),
             encoding="utf-8",
@@ -147,7 +178,7 @@ class MainCLITest(unittest.TestCase):
         self.assertFalse(digest.get_output_path(FIXED_NOW).exists())
         self.assertIn("Fetching Hacker News items", stdout)
         self.assertIn("Fetching GitHub Trending items", stdout)
-        self.assertIn("Both sources failed; newsletter was not generated", stderr)
+        self.assertIn("All enabled sources failed; newsletter was not generated", stderr)
 
     def test_status_reports_success(self) -> None:
         digest_path = self.write_digest(
@@ -190,6 +221,66 @@ class MainCLITest(unittest.TestCase):
         self.assertIn("status: invalid", stdout)
         self.assertIn("# Newsletter - 2026-03-26", stdout)
         self.assertEqual(stderr, "")
+
+    def test_generate_writes_x_author_section_when_enabled(self) -> None:
+        with patch.object(digest.config, "X_ENABLED", True), patch(
+            "newsletter.digest.fetch_hn",
+            return_value=[make_hn_item()],
+        ), patch(
+            "newsletter.digest.fetch_github_trending",
+            return_value=[make_trending_item()],
+        ), patch(
+            "newsletter.digest.fetch_x_posts",
+            return_value=make_x_author_items(),
+        ):
+            exit_code, stdout, stderr = self.capture_cli(["generate"])
+
+        digest_path = digest.get_output_path(FIXED_NOW)
+        content = digest_path.read_text(encoding="utf-8")
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("## X Posts", content)
+        self.assertIn("### Andrej Karpathy (@karpathy)", content)
+        self.assertIn("Fetched 1 X author posts", stdout)
+        self.assertEqual(stderr, "")
+
+    def test_status_reports_partial_when_x_enabled_but_empty(self) -> None:
+        with patch.object(digest.config, "X_ENABLED", True):
+            self.write_digest(
+                hn_items=[make_hn_item()],
+                trending_items=[make_trending_item()],
+                x_items_by_author={},
+            )
+
+            exit_code, stdout, stderr = self.capture_cli(["status"])
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("status: partial", stdout)
+        self.assertIn("X Posts", stdout)
+        self.assertEqual(stderr, "")
+
+    def test_render_markdown_places_x_section_after_hacker_news(self) -> None:
+        content = render_markdown(
+            date_str="2026-03-26",
+            hn_items=[make_hn_item()],
+            trending_items=[make_trending_item()],
+            generated_at="2026-03-26 09:30:00",
+            x_items_by_author=make_x_author_items(),
+        )
+
+        self.assertLess(content.index("## Hacker News"), content.index("## X Posts"))
+
+    def test_render_markdown_renders_empty_x_section(self) -> None:
+        content = render_markdown(
+            date_str="2026-03-26",
+            hn_items=[make_hn_item()],
+            trending_items=[make_trending_item()],
+            generated_at="2026-03-26 09:30:00",
+            x_items_by_author={},
+        )
+
+        self.assertIn("## X Posts", content)
+        self.assertIn("No items fetched.", content)
 
     def test_show_prints_digest(self) -> None:
         self.write_digest(

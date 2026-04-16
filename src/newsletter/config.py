@@ -1,4 +1,50 @@
 import os
+from pathlib import Path
+
+
+def _parse_dotenv_line(line: str) -> tuple[str, str] | None:
+    stripped = line.strip()
+    if not stripped or stripped.startswith("#"):
+        return None
+
+    if stripped.startswith("export "):
+        stripped = stripped[len("export ") :].lstrip()
+
+    if "=" not in stripped:
+        return None
+
+    key, raw_value = stripped.split("=", 1)
+    key = key.strip()
+    value = raw_value.strip()
+    if not key:
+        return None
+
+    if value and value[0] == value[-1] and value[0] in {"'", '"'}:
+        value = value[1:-1]
+    elif " #" in value:
+        # Only treat inline comments specially for unquoted values.
+        value = value.split(" #", 1)[0].rstrip()
+
+    return key, value
+
+
+def _load_dotenv_file(path: Path) -> None:
+    if not path.is_file():
+        return
+    try:
+        content = path.read_text(encoding="utf-8")
+    except OSError:
+        return
+
+    for line in content.splitlines():
+        parsed = _parse_dotenv_line(line)
+        if parsed is None:
+            continue
+        key, value = parsed
+        os.environ.setdefault(key, value)
+
+
+_load_dotenv_file(Path(".env"))
 
 HN_TOP_STORIES_URL = "https://hacker-news.firebaseio.com/v0/topstories.json"
 HN_ITEM_URL_TEMPLATE = "https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
@@ -11,3 +57,48 @@ DEFAULT_ITEM_LIMIT = 10
 REQUEST_TIMEOUT = 20
 OUTPUT_DIR = "daily"
 USER_AGENT = "Mozilla/5.0 (compatible; newsletter-bot/0.1)"
+X_COOKIES = os.getenv("X_COOKIES")
+X_COOKIES_PATH = os.getenv("X_COOKIES_PATH") or "x.json"
+X_WEB_BEARER_TOKEN = os.getenv("X_WEB_BEARER_TOKEN")
+X_CLIENT_TRANSACTION_ID = os.getenv("X_CLIENT_TRANSACTION_ID")
+X_USER_TWEETS_OPERATION = "x3B_xLqC0yZawOB7WQhaVQ/UserTweets"
+X_AUTHOR_IDS = {
+    "karpathy": "33836629",
+    "sama": "1605",
+    "swyxl": "33521530",
+    "joshwoodward": "206546319",
+    "mattturck": "247785677",
+    "trq212": "352806502"
+}
+X_LOOKBACK_HOURS = 24*7
+X_POST_LIMIT_PER_AUTHOR = 3
+X_AUTHOR_REQUEST_TIMEOUT = 20
+X_AUTHOR_REQUEST_RETRIES = 4
+X_AUTHORS = (
+    "karpathy",
+    "sama",
+    "swyxl",
+    "joshwoodward",
+    "mattturck",
+    "trq212",
+)
+
+
+def resolve_x_cookies_path() -> Path | None:
+    if not X_COOKIES_PATH:
+        return None
+    return Path(X_COOKIES_PATH).expanduser()
+
+
+def is_x_enabled() -> bool:
+    if X_COOKIES and X_COOKIES.strip():
+        return True
+    cookies_path = resolve_x_cookies_path()
+    return cookies_path is not None and cookies_path.is_file()
+
+
+def get_x_author_ids() -> dict[str, str]:
+    return dict(X_AUTHOR_IDS)
+
+
+X_ENABLED = is_x_enabled()

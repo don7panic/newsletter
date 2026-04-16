@@ -2,7 +2,7 @@
 
 [中文说明](README.zh-CN.md)
 
-Local-first CLI for generating a daily Markdown tech newsletter from GitHub Trending and Hacker News.
+Local-first CLI for generating a daily Markdown tech newsletter from GitHub Trending, Hacker News, and optional X author posts.
 
 ```text
 daily/YYYY-MM-DD.md
@@ -12,9 +12,10 @@ daily/YYYY-MM-DD.md
 
 - Generates a daily newsletter in the directory where you run the CLI
 - Renders `GitHub Trending` first, then `Hacker News`
+- Optionally appends `X Posts` when X cookies are configured
 - Overwrites the same day's file on re-run
 - Writes partial output if one source fails
-- Exits non-zero only when both sources fail
+- Exits non-zero only when all enabled sources fail
 
 ## Prerequisites
 
@@ -103,6 +104,7 @@ Generated at: 2026-03-25 09:00:00
 - GitHub Trending page for ranking and daily star growth
 - GitHub repo API for repository metadata such as description and language
 - Hacker News official API for top stories and item details
+- Optional X author posts fetched from X Web using a logged-in cookies export
 
 Only HN items with `type == "story"` are kept.
 
@@ -111,8 +113,47 @@ Only HN items with `type == "story"` are kept.
 - Output path is `daily/YYYY-MM-DD.md` relative to the current working directory
 - The Markdown format is intentionally stable for downstream parsing or archiving
 - A missing GitHub token may cause GitHub API rate limiting
+- X author support uses your browser cookies against X Web endpoints and does not require API credits
 
 You can set `GITHUB_TOKEN` or `GH_TOKEN` to reduce anonymous GitHub API limits.
+
+## Optional X Posts Setup
+
+To append an `X Posts` section for these authors:
+
+- `@karpathy`
+- `@sama`
+- `@swyxl`
+- `@joshwoodward`
+- `@mattturck`
+- `@trq212`
+
+Put cookies into `.env` (recommended):
+
+```bash
+X_COOKIES='auth_token=...; ct0=...'
+```
+
+Then run:
+
+```bash
+newsletter generate
+```
+
+Notes:
+
+- `X_COOKIES` supports three formats:
+  - raw cookie header (`auth_token=...; ct0=...`)
+  - JSON object (`{"auth_token":"...","ct0":"..."}`)
+  - cookie list JSON (`[{"name":"auth_token","value":"..."}, ...]`)
+- `X_COOKIES` in `.env` is loaded automatically and takes precedence over `X_COOKIES_PATH`
+- If you prefer a file, set `X_COOKIES_PATH=/absolute/path/to/x-cookies.json` (default fallback is `./x.json`)
+- The cookies must come from a logged-in X browser session
+- If cookies expire, refresh the export and rerun
+- Current default is hardcoded to test `@karpathy` (`33836629`) first
+- If X Web starts rejecting the request, you can optionally set `X_WEB_BEARER_TOKEN` and `X_CLIENT_TRANSACTION_ID` from a browser `Copy as cURL`
+- The default `UserTweets` operation is hardcoded to `x3B_xLqC0yZawOB7WQhaVQ/UserTweets`
+- When both `X_COOKIES` and `X_COOKIES_PATH` are missing/unreadable, the CLI skips the X source and keeps the original two-section output
 
 ## Development
 

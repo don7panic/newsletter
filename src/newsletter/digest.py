@@ -8,6 +8,7 @@ from pathlib import Path
 from newsletter import config
 from newsletter.fetchers.github_trending import fetch_github_trending
 from newsletter.fetchers.hn import fetch_hn
+from newsletter.fetchers.x_posts import fetch_x_posts
 from newsletter.renderers.markdown import render_markdown
 from newsletter.storage.writer import write_output
 
@@ -19,6 +20,14 @@ class DigestInspection:
 
 
 LOGGER = logging.getLogger(__name__)
+
+
+def get_enabled_section_headings(include_x: bool | None = None) -> tuple[str, ...]:
+    headings = ["GitHub Trending", "Hacker News"]
+    x_enabled = config.X_ENABLED if include_x is None else include_x
+    if x_enabled:
+        headings.append("X Posts")
+    return tuple(headings)
 
 
 def get_now() -> datetime:
@@ -43,7 +52,7 @@ def extract_sections(content: str) -> dict[str, list[str]]:
     current_heading: str | None = None
 
     for line in content.splitlines():
-        if line in {"## GitHub Trending", "## Hacker News"}:
+        if line.startswith("## "):
             current_heading = line.removeprefix("## ")
             sections[current_heading] = []
             continue
@@ -73,12 +82,8 @@ def inspect_digest(path: Path, now: datetime | None = None) -> DigestInspection:
         return DigestInspection("invalid", f"Failed to read newsletter file: {exc}")
 
     date_str, _ = get_timestamp_strings(now)
-    required_markers = (
-        f"# Newsletter - {date_str}",
-        "## GitHub Trending",
-        "## Hacker News",
-        "Generated at:",
-    )
+    required_markers = [f"# Newsletter - {date_str}", "Generated at:"]
+    required_markers.extend(f"## {heading}" for heading in get_enabled_section_headings())
     missing_markers = [marker for marker in required_markers if marker not in content]
     if missing_markers:
         return DigestInspection(
@@ -90,7 +95,7 @@ def inspect_digest(path: Path, now: datetime | None = None) -> DigestInspection:
     sections = extract_sections(content)
     empty_sections = [
         heading
-        for heading in ("GitHub Trending", "Hacker News")
+        for heading in get_enabled_section_headings()
         if section_has_no_items(sections.get(heading, []))
     ]
     if empty_sections:
@@ -99,7 +104,7 @@ def inspect_digest(path: Path, now: datetime | None = None) -> DigestInspection:
             "Sections with no items: " + ", ".join(empty_sections),
         )
 
-    return DigestInspection("success", "Newsletter file exists and includes both sections.")
+    return DigestInspection("success", "Newsletter file exists and includes all enabled sections.")
 
 
 def generate_digest(now: datetime | None = None) -> int:
@@ -108,11 +113,14 @@ def generate_digest(now: datetime | None = None) -> int:
 
     hn_items: list[dict] = []
     trending_items: list[dict] = []
+    x_items_by_author: dict[str, list[dict]] | None = None
+    successful_sources = 0
 
     try:
         LOGGER.info("Fetching Hacker News items")
         hn_items = fetch_hn(config.DEFAULT_ITEM_LIMIT)
         LOGGER.info("Fetched %s Hacker News items", len(hn_items))
+        successful_sources += 1
     except Exception as exc:
         LOGGER.error("Hacker News fetch failed: %s", exc)
 
@@ -120,11 +128,23 @@ def generate_digest(now: datetime | None = None) -> int:
         LOGGER.info("Fetching GitHub Trending items")
         trending_items = fetch_github_trending(config.DEFAULT_ITEM_LIMIT)
         LOGGER.info("Fetched %s GitHub Trending items", len(trending_items))
+        successful_sources += 1
     except Exception as exc:
         LOGGER.error("GitHub Trending fetch failed: %s", exc)
 
-    if not hn_items and not trending_items:
-        LOGGER.error("Both sources failed; newsletter was not generated")
+    if config.X_ENABLED:
+        x_items_by_author = {}
+        try:
+            LOGGER.info("Fetching X author posts")
+            x_items_by_author = fetch_x_posts(current_time)
+            post_count = sum(len(items) for items in x_items_by_author.values())
+            LOGGER.info("Fetched %s X author posts", post_count)
+            successful_sources += 1
+        except Exception as exc:
+            LOGGER.error("X author posts fetch failed: %s", exc)
+
+    if successful_sources == 0:
+        LOGGER.error("All enabled sources failed; newsletter was not generated")
         return 1
 
     output_path = get_output_path(current_time)
@@ -134,6 +154,7 @@ def generate_digest(now: datetime | None = None) -> int:
             date_str=date_str,
             hn_items=hn_items,
             trending_items=trending_items,
+            x_items_by_author=x_items_by_author,
             generated_at=generated_at,
         )
         write_output(str(output_path), markdown)

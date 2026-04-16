@@ -54,11 +54,47 @@ def _render_trending_items(items: list[dict]) -> list[str]:
     return lines[:-1]
 
 
+def _render_x_author_items(items_by_author: dict[str, list[dict]]) -> list[str]:
+    if not items_by_author or not any(items_by_author.values()):
+        return ["No items fetched."]
+
+    lines: list[str] = []
+    for username, items in items_by_author.items():
+        if not items:
+            continue
+
+        meta = items[0].get("meta", {})
+        author_name = meta.get("author_name") or f"@{username}"
+        lines.extend([f"### {author_name} (@{username})", ""])
+
+        for index, item in enumerate(items, start=1):
+            post_meta = item.get("meta", {})
+            url = item.get("url") or "#"
+            summary = item.get("summary") or ""
+            posted_at = post_meta.get("created_at") or "unknown"
+            lines.extend(
+                [
+                    f"{index}. [@{username}]({url})",
+                    f"   - Posted: {posted_at}",
+                    "   - Metrics: "
+                    f"{post_meta.get('like_count', 0)} likes, "
+                    f"{post_meta.get('reply_count', 0)} replies, "
+                    f"{post_meta.get('retweet_count', 0)} reposts, "
+                    f"{post_meta.get('quote_count', 0)} quotes",
+                    f"   - Text: {summary}",
+                    "",
+                ]
+            )
+
+    return lines[:-1]
+
+
 def render_markdown(
     date_str: str,
     hn_items: list[dict],
     trending_items: list[dict],
     generated_at: str,
+    x_items_by_author: dict[str, list[dict]] | None = None,
 ) -> str:
     lines = [
         f"# Newsletter - {date_str}",
@@ -71,7 +107,16 @@ def render_markdown(
         "",
         *_render_hn_items(hn_items),
         "",
-        "---",
-        f"Generated at: {generated_at}",
     ]
+    if x_items_by_author is not None:
+        lines.extend(
+            [
+                "## X Posts",
+                "",
+                *_render_x_author_items(x_items_by_author),
+                "",
+            ]
+        )
+
+    lines.extend(["---", f"Generated at: {generated_at}"])
     return "\n".join(lines) + "\n"
