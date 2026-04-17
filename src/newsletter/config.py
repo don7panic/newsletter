@@ -65,19 +65,17 @@ X_USER_TWEETS_OPERATION = "x3B_xLqC0yZawOB7WQhaVQ/UserTweets"
 X_AUTHOR_IDS = {
     "karpathy": "33836629",
     "sama": "1605",
-    "swyxl": "33521530",
     "joshwoodward": "206546319",
     "mattturck": "247785677",
     "trq212": "352806502"
 }
-X_LOOKBACK_HOURS = 24*7
+X_LOOKBACK_HOURS = 24*2
 X_POST_LIMIT_PER_AUTHOR = 3
 X_AUTHOR_REQUEST_TIMEOUT = 20
 X_AUTHOR_REQUEST_RETRIES = 4
 X_AUTHORS = (
     "karpathy",
     "sama",
-    "swyxl",
     "joshwoodward",
     "mattturck",
     "trq212",

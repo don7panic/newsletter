@@ -76,11 +76,6 @@ def _render_x_author_items(items_by_author: dict[str, list[dict]]) -> list[str]:
                 [
                     f"{index}. [@{username}]({url})",
                     f"   - Posted: {posted_at}",
-                    "   - Metrics: "
-                    f"{post_meta.get('like_count', 0)} likes, "
-                    f"{post_meta.get('reply_count', 0)} replies, "
-                    f"{post_meta.get('retweet_count', 0)} reposts, "
-                    f"{post_meta.get('quote_count', 0)} quotes",
                     f"   - Text: {summary}",
                     "",
                 ]
