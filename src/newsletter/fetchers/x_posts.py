@@ -55,6 +55,11 @@ def _normalize_text(text: object) -> str:
     return " ".join(text.split())
 
 
+def _is_retweet_text(text: object) -> bool:
+    normalized = _normalize_text(text)
+    return normalized.startswith("RT @")
+
+
 def _coerce_datetime(value: object) -> datetime | None:
     if isinstance(value, datetime):
         return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
@@ -224,11 +229,15 @@ def _extract_entities(payload: dict[str, Any]) -> tuple[dict[str, dict], dict[st
 
 def _is_original_post(tweet: dict[str, Any]) -> bool:
     legacy = tweet.get("legacy", {})
+    note_text = _get_by_path(tweet, "note_tweet.note_tweet_results.result.text", "")
+    full_text = legacy.get("full_text", "")
     return not any(
         (
             legacy.get("retweeted_status_id_str"),
             _get_by_path(tweet, "retweeted_status_result.result.rest_id"),
             _get_by_path(tweet, "retweeted_status_result.result.tweet.rest_id"),
+            _is_retweet_text(note_text),
+            _is_retweet_text(full_text),
             legacy.get("quoted_status_id_str"),
             _get_by_path(tweet, "quoted_status_result.result.rest_id"),
             _get_by_path(tweet, "quoted_status_result.result.tweet.rest_id"),

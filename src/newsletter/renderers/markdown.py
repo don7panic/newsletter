@@ -91,18 +91,8 @@ def render_markdown(
     generated_at: str,
     x_items_by_author: dict[str, list[dict]] | None = None,
 ) -> str:
-    lines = [
-        f"# Newsletter - {date_str}",
-        "",
-        "## GitHub Trending",
-        "",
-        *_render_trending_items(trending_items),
-        "",
-        "## Hacker News",
-        "",
-        *_render_hn_items(hn_items),
-        "",
-    ]
+    lines = [f"# Newsletter - {date_str}", ""]
+
     if x_items_by_author is not None:
         lines.extend(
             [
@@ -113,5 +103,17 @@ def render_markdown(
             ]
         )
 
+    lines.extend(
+        [
+            "## GitHub Trending",
+            "",
+            *_render_trending_items(trending_items),
+            "",
+            "## Hacker News",
+            "",
+            *_render_hn_items(hn_items),
+            "",
+        ]
+    )
     lines.extend(["---", f"Generated at: {generated_at}"])
     return "\n".join(lines) + "\n"

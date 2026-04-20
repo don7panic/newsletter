@@ -26,7 +26,7 @@ These project-local skills should be used when their description matches the tas
   - bare `newsletter` prints help
 - Output path: `./daily/YYYY-MM-DD.md` relative to the working directory where the CLI is run
 - Code is the source of truth when docs disagree
-- Current rendered section order is `GitHub Trending` first, then `Hacker News`
+- Current rendered section order is `X Posts` first when enabled, then `GitHub Trending`, then `Hacker News`
 - If both sources fail, the CLI should exit non-zero
 - If one source fails, partial output is acceptable and the file should still be written
 

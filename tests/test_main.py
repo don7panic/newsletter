@@ -259,7 +259,7 @@ class MainCLITest(unittest.TestCase):
         self.assertIn("X Posts", stdout)
         self.assertEqual(stderr, "")
 
-    def test_render_markdown_places_x_section_after_hacker_news(self) -> None:
+    def test_render_markdown_places_x_section_first(self) -> None:
         content = render_markdown(
             date_str="2026-03-26",
             hn_items=[make_hn_item()],
@@ -268,7 +268,8 @@ class MainCLITest(unittest.TestCase):
             x_items_by_author=make_x_author_items(),
         )
 
-        self.assertLess(content.index("## Hacker News"), content.index("## X Posts"))
+        self.assertLess(content.index("## X Posts"), content.index("## GitHub Trending"))
+        self.assertLess(content.index("## GitHub Trending"), content.index("## Hacker News"))
 
     def test_render_markdown_renders_empty_x_section(self) -> None:
         content = render_markdown(

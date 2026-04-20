@@ -26,7 +26,7 @@ def get_enabled_section_headings(include_x: bool | None = None) -> tuple[str, ..
     headings = ["GitHub Trending", "Hacker News"]
     x_enabled = config.X_ENABLED if include_x is None else include_x
     if x_enabled:
-        headings.append("X Posts")
+        headings.insert(0, "X Posts")
     return tuple(headings)
 
 

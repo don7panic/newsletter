@@ -35,7 +35,7 @@ User request notes: `$ARGUMENTS`
 - Bare `newsletter` prints help
 - Output path: `./daily/YYYY-MM-DD.md` relative to the working directory where the CLI is run
 - Source of truth is code, not older docs
-- Current rendered section order is `GitHub Trending` first, then `Hacker News`
+- Current rendered section order is `X Posts` first when enabled, then `GitHub Trending`, then `Hacker News`
 - If both sources fail, the CLI exits non-zero
 - If one source fails, partial output is acceptable and the file should still be written
 
@@ -91,7 +91,7 @@ Use the injected command output above to:
 7. **Show Today's Content**: If the newsletter file exists, explicitly display the newsletter content from `newsletter show`.
    - Do not summarize, compress, or pick highlights
    - Do not omit items from either section
-   - Preserve the rendered section order: `GitHub Trending` first, then `Hacker News`
+   - Preserve the rendered section order: `X Posts` first when enabled, then `GitHub Trending`, then `Hacker News`
    - Do not paraphrase, translate, rewrite, or reformat the newsletter body
    - Put the full `newsletter show` output inside a fenced `md` code block
    - If there is any conflict with general brevity guidance, prefer showing the full newsletter body

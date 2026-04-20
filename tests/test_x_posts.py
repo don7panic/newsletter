@@ -205,6 +205,12 @@ class XPostsFetcherTest(unittest.TestCase):
         tweets, users = _extract_entities(retweet_payload)
         self.assertIsNone(_normalize_post(tweets["1"], users, "karpathy", FIXED_NOW))
 
+        text_retweet_payload = make_payload(
+            tweet_overrides={"1": {"legacy": {"full_text": "RT @MlgtheUno: forwarded text"}}}
+        )
+        tweets, users = _extract_entities(text_retweet_payload)
+        self.assertIsNone(_normalize_post(tweets["1"], users, "karpathy", FIXED_NOW))
+
         quote_payload = make_payload(
             tweet_overrides={"1": {"legacy": {"quoted_status_id_str": "99"}}}
         )

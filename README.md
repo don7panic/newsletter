@@ -11,8 +11,7 @@ daily/YYYY-MM-DD.md
 ## What It Does
 
 - Generates a daily newsletter in the directory where you run the CLI
-- Renders `GitHub Trending` first, then `Hacker News`
-- Optionally appends `X Posts` when X cookies are configured
+- Renders `X Posts` first when enabled, then `GitHub Trending`, then `Hacker News`
 - Overwrites the same day's file on re-run
 - Writes partial output if one source fails
 - Exits non-zero only when all enabled sources fail
@@ -80,6 +79,14 @@ newsletter
 
 ```md
 # Newsletter - 2026-03-25
+
+## X Posts
+
+### Andrej Karpathy (@karpathy)
+
+1. [@karpathy](https://x.com/karpathy/status/1)
+   - Posted: 2026-03-25T08:45:00Z
+   - Text: ...
 
 ## GitHub Trending
 
