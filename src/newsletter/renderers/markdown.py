@@ -11,7 +11,7 @@ def _render_hn_items(items: list[dict]) -> list[str]:
         score = meta.get("score")
         comments = meta.get("comments")
         discussion_url = meta.get("hn_discussion_url", "")
-        summary = item.get("summary") or ""
+        ai_summary = item.get("ai_summary") or item.get("summary") or ""
         title = item.get("title") or "Untitled"
         url = item.get("url") or discussion_url or "#"
 
@@ -20,7 +20,7 @@ def _render_hn_items(items: list[dict]) -> list[str]:
                 f"{index}. [{title}]({url})",
                 f"   - {score if score is not None else 0} points, {comments if comments is not None else 0} comments",
                 f"   - HN: {discussion_url}",
-                f"   - Summary: {summary}",
+                f"   - Summary: {ai_summary}",
                 "",
             ]
         )
@@ -38,7 +38,7 @@ def _render_trending_items(items: list[dict]) -> list[str]:
         repo_name = meta.get("repo_name") or item.get("title") or "unknown/unknown"
         language = meta.get("language", "")
         stars_today = meta.get("stars_today")
-        description = meta.get("description", "")
+        ai_summary = item.get("ai_summary") or meta.get("description", "")
         url = item.get("url") or "#"
 
         lines.extend(
@@ -46,7 +46,7 @@ def _render_trending_items(items: list[dict]) -> list[str]:
                 f"{index}. [{repo_name}]({url})",
                 f"   - Language: {language}",
                 f"   - ⭐ today: {stars_today if stars_today is not None else ''}",
-                f"   - Description: {description}",
+                f"   - Description: {ai_summary}",
                 "",
             ]
         )
@@ -70,13 +70,13 @@ def _render_x_author_items(items_by_author: dict[str, list[dict]]) -> list[str]:
         for index, item in enumerate(items, start=1):
             post_meta = item.get("meta", {})
             url = item.get("url") or "#"
-            summary = item.get("summary") or ""
+            ai_summary = item.get("ai_summary") or item.get("summary") or ""
             posted_at = post_meta.get("created_at") or "unknown"
             lines.extend(
                 [
                     f"{index}. [@{username}]({url})",
                     f"   - Posted: {posted_at}",
-                    f"   - Text: {summary}",
+                    f"   - Text: {ai_summary}",
                     "",
                 ]
             )

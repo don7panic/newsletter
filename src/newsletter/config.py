@@ -100,3 +100,39 @@ def get_x_author_ids() -> dict[str, str]:
 
 
 X_ENABLED = is_x_enabled()
+
+
+# ---------------------------------------------------------------------------
+# AI configuration — reads directly from .env, not system env vars
+# ---------------------------------------------------------------------------
+
+_DOTENV_CACHE: dict[str, str] | None = None
+
+
+def _read_env(key: str, default: str = "") -> str:
+    """Read a value directly from the project .env file.
+
+    This avoids relying on ``os.environ`` so that system-level environment
+    variables cannot accidentally override the project-local configuration.
+    The .env file is parsed once and cached.
+    """
+    global _DOTENV_CACHE
+    if _DOTENV_CACHE is None:
+        _DOTENV_CACHE = {}
+        dotenv_path = Path(".env")
+        if dotenv_path.is_file():
+            for line in dotenv_path.read_text(encoding="utf-8").splitlines():
+                parsed = _parse_dotenv_line(line)
+                if parsed is not None:
+                    _DOTENV_CACHE[parsed[0]] = parsed[1]
+    return _DOTENV_CACHE.get(key, default)
+
+
+AI_API_KEY = _read_env("AI_API_KEY")
+AI_BASE_URL = _read_env("AI_BASE_URL", "https://api.openai.com/v1")
+AI_MODEL = _read_env("AI_MODEL", "glm-5")
+try:
+    AI_SCORE_THRESHOLD = float(_read_env("AI_SCORE_THRESHOLD", "6.0"))
+except ValueError:
+    AI_SCORE_THRESHOLD = 6.0
+AI_ENABLED = bool(AI_API_KEY)

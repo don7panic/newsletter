@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 from newsletter import config
+from newsletter.ai.client import score_and_summarize
 from newsletter.fetchers.github_trending import fetch_github_trending
 from newsletter.fetchers.hn import fetch_hn
 from newsletter.fetchers.x_posts import fetch_x_posts
@@ -142,6 +143,27 @@ def generate_digest(now: datetime | None = None) -> int:
             successful_sources += 1
         except Exception as exc:
             LOGGER.error("X author posts fetch failed: %s", exc)
+
+    all_items: list[dict] = []
+    all_items.extend(hn_items)
+    all_items.extend(trending_items)
+
+    # --- AI scoring & filtering ---
+    if config.AI_ENABLED:
+        LOGGER.info("AI scoring enabled, scoring %d items", len(all_items))
+        all_items = score_and_summarize(all_items)
+        before = len(all_items)
+        all_items = [it for it in all_items if it.get("ai_score", 0.0) >= config.AI_SCORE_THRESHOLD]
+        LOGGER.info(
+            "AI filter: %d items kept (threshold >= %s), %d removed",
+            len(all_items),
+            config.AI_SCORE_THRESHOLD,
+            before - len(all_items),
+        )
+
+    # Separate back into source-specific lists for the renderer
+    hn_items = [it for it in all_items if it.get("source") == "hacker_news"]
+    trending_items = [it for it in all_items if it.get("source") == "github_trending"]
 
     if successful_sources == 0:
         LOGGER.error("All enabled sources failed; newsletter was not generated")
