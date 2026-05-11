@@ -108,6 +108,42 @@ def inspect_digest(path: Path, now: datetime | None = None) -> DigestInspection:
     return DigestInspection("success", "Newsletter file exists and includes all enabled sections.")
 
 
+def _source_items(items: list[dict], source: str) -> list[dict]:
+    return [item for item in items if item.get("source") == source]
+
+
+def _rank_for_fallback(item: dict) -> int:
+    rank = item.get("rank")
+    return rank if isinstance(rank, int) else config.DEFAULT_ITEM_LIMIT + 1
+
+
+def filter_ai_items(items: list[dict]) -> list[dict]:
+    scored_items = score_and_summarize(items)
+    kept_items = [
+        item
+        for item in scored_items
+        if item.get("ai_score", 0.0) >= config.AI_SCORE_THRESHOLD
+    ]
+
+    hn_items = _source_items(scored_items, "hacker_news")
+    hn_kept_count = len(_source_items(kept_items, "hacker_news"))
+    hn_min_items = min(config.HN_MIN_ITEMS_AFTER_AI, len(hn_items))
+
+    if hn_kept_count < hn_min_items:
+        kept_ids = {id(item) for item in kept_items}
+        needed = hn_min_items - hn_kept_count
+        for item in sorted(hn_items, key=_rank_for_fallback):
+            if id(item) in kept_ids:
+                continue
+            kept_items.append(item)
+            kept_ids.add(id(item))
+            needed -= 1
+            if needed == 0:
+                break
+
+    return kept_items
+
+
 def generate_digest(now: datetime | None = None) -> int:
     current_time = now or get_now()
     date_str, generated_at = get_timestamp_strings(current_time)
@@ -151,14 +187,22 @@ def generate_digest(now: datetime | None = None) -> int:
     # --- AI scoring & filtering ---
     if config.AI_ENABLED:
         LOGGER.info("AI scoring enabled, scoring %d items", len(all_items))
-        all_items = score_and_summarize(all_items)
         before = len(all_items)
-        all_items = [it for it in all_items if it.get("ai_score", 0.0) >= config.AI_SCORE_THRESHOLD]
+        before_hn = len(_source_items(all_items, "hacker_news"))
+        before_trending = len(_source_items(all_items, "github_trending"))
+        all_items = filter_ai_items(all_items)
         LOGGER.info(
             "AI filter: %d items kept (threshold >= %s), %d removed",
             len(all_items),
             config.AI_SCORE_THRESHOLD,
             before - len(all_items),
+        )
+        LOGGER.info(
+            "AI filter by source: Hacker News %d/%d kept, GitHub Trending %d/%d kept",
+            len(_source_items(all_items, "hacker_news")),
+            before_hn,
+            len(_source_items(all_items, "github_trending")),
+            before_trending,
         )
 
     # Separate back into source-specific lists for the renderer

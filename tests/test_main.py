@@ -23,8 +23,10 @@ FIXED_NOW = datetime(2026, 3, 26, 9, 30, 0)
 
 def make_hn_item() -> dict:
     return {
+        "source": "hacker_news",
         "title": "Example HN Story",
         "url": "https://example.com/hn",
+        "rank": 1,
         "summary": "A short summary.",
         "meta": {
             "score": 123,
@@ -36,8 +38,10 @@ def make_hn_item() -> dict:
 
 def make_trending_item() -> dict:
     return {
+        "source": "github_trending",
         "title": "example/project",
         "url": "https://github.com/example/project",
+        "rank": 1,
         "meta": {
             "repo_name": "example/project",
             "language": "Python",
@@ -76,16 +80,19 @@ class MainCLITest(unittest.TestCase):
         output_dir = Path(self.tempdir.name) / "daily"
         output_patch = patch.object(digest.config, "OUTPUT_DIR", str(output_dir))
         x_enabled_patch = patch.object(digest.config, "X_ENABLED", False)
+        ai_enabled_patch = patch.object(digest.config, "AI_ENABLED", False)
         digest_now_patch = patch("newsletter.digest.get_now", return_value=FIXED_NOW)
         cli_now_patch = patch("newsletter.cli.get_now", return_value=FIXED_NOW)
 
         output_patch.start()
         x_enabled_patch.start()
+        ai_enabled_patch.start()
         digest_now_patch.start()
         cli_now_patch.start()
 
         self.addCleanup(output_patch.stop)
         self.addCleanup(x_enabled_patch.stop)
+        self.addCleanup(ai_enabled_patch.stop)
         self.addCleanup(digest_now_patch.stop)
         self.addCleanup(cli_now_patch.stop)
 
@@ -166,6 +173,55 @@ class MainCLITest(unittest.TestCase):
         self.assertIn(f"Wrote newsletter to {digest_path}", stdout)
         self.assertIn("Hacker News fetch failed: HN unavailable", stderr)
         self.assertIn("No items fetched.", digest_path.read_text(encoding="utf-8"))
+
+    def test_ai_filter_keeps_minimum_hn_items(self) -> None:
+        hn_items = [
+            {**make_hn_item(), "title": "HN Story One", "rank": 1},
+            {**make_hn_item(), "title": "HN Story Two", "rank": 2},
+            {**make_hn_item(), "title": "HN Story Three", "rank": 3},
+        ]
+        trending_items = [
+            {
+                **make_trending_item(),
+                "title": "example/kept",
+                "meta": {
+                    **make_trending_item()["meta"],
+                    "repo_name": "example/kept",
+                },
+            }
+        ]
+
+        def fake_score_and_summarize(items: list[dict]) -> list[dict]:
+            scored = []
+            for item in items:
+                scored_item = dict(item)
+                scored_item["ai_score"] = 8.0 if item["source"] == "github_trending" else 4.0
+                scored_item["ai_summary"] = item.get("summary", "")
+                scored.append(scored_item)
+            return scored
+
+        with patch.object(digest.config, "AI_ENABLED", True), patch.object(
+            digest.config,
+            "HN_MIN_ITEMS_AFTER_AI",
+            2,
+        ), patch("newsletter.digest.fetch_hn", return_value=hn_items), patch(
+            "newsletter.digest.fetch_github_trending",
+            return_value=trending_items,
+        ), patch(
+            "newsletter.digest.score_and_summarize",
+            side_effect=fake_score_and_summarize,
+        ):
+            exit_code, stdout, stderr = self.capture_cli(["generate"])
+
+        content = digest.get_output_path(FIXED_NOW).read_text(encoding="utf-8")
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("HN Story One", content)
+        self.assertIn("HN Story Two", content)
+        self.assertNotIn("HN Story Three", content)
+        self.assertIn("example/kept", content)
+        self.assertIn("Hacker News 2/3 kept", stdout)
+        self.assertEqual(stderr, "")
 
     def test_generate_fails_when_both_sources_fail(self) -> None:
         with patch("newsletter.digest.fetch_hn", side_effect=RuntimeError("HN unavailable")), patch(
