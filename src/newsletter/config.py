@@ -139,4 +139,11 @@ try:
     HN_MIN_ITEMS_AFTER_AI = max(0, int(_read_env("HN_MIN_ITEMS_AFTER_AI", "3")))
 except ValueError:
     HN_MIN_ITEMS_AFTER_AI = 3
+try:
+    GITHUB_TRENDING_MIN_ITEMS_AFTER_AI = max(
+        0,
+        int(_read_env("GITHUB_TRENDING_MIN_ITEMS_AFTER_AI", "3")),
+    )
+except ValueError:
+    GITHUB_TRENDING_MIN_ITEMS_AFTER_AI = 3
 AI_ENABLED = bool(AI_API_KEY)

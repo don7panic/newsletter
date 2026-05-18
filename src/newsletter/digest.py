@@ -108,16 +108,35 @@ def inspect_digest(path: Path, now: datetime | None = None) -> DigestInspection:
     return DigestInspection("success", "Newsletter file exists and includes all enabled sections.")
 
 
-def _source_items(items: list[dict], source: str) -> list[dict]:
-    return [item for item in items if item.get("source") == source]
-
-
 def _rank_for_fallback(item: dict) -> int:
     rank = item.get("rank")
     return rank if isinstance(rank, int) else config.DEFAULT_ITEM_LIMIT + 1
 
 
-def filter_ai_items(items: list[dict]) -> list[dict]:
+def _restore_minimum_items(
+    *,
+    kept_items: list[dict],
+    scored_items: list[dict],
+    minimum_count: int,
+) -> None:
+    min_items = min(minimum_count, len(scored_items))
+
+    if len(kept_items) >= min_items:
+        return
+
+    kept_ids = {id(item) for item in kept_items}
+    needed = min_items - len(kept_items)
+    for item in sorted(scored_items, key=_rank_for_fallback):
+        if id(item) in kept_ids:
+            continue
+        kept_items.append(item)
+        kept_ids.add(id(item))
+        needed -= 1
+        if needed == 0:
+            break
+
+
+def filter_ai_items(items: list[dict], minimum_count: int = 0) -> list[dict]:
     scored_items = score_and_summarize(items)
     kept_items = [
         item
@@ -125,21 +144,11 @@ def filter_ai_items(items: list[dict]) -> list[dict]:
         if item.get("ai_score", 0.0) >= config.AI_SCORE_THRESHOLD
     ]
 
-    hn_items = _source_items(scored_items, "hacker_news")
-    hn_kept_count = len(_source_items(kept_items, "hacker_news"))
-    hn_min_items = min(config.HN_MIN_ITEMS_AFTER_AI, len(hn_items))
-
-    if hn_kept_count < hn_min_items:
-        kept_ids = {id(item) for item in kept_items}
-        needed = hn_min_items - hn_kept_count
-        for item in sorted(hn_items, key=_rank_for_fallback):
-            if id(item) in kept_ids:
-                continue
-            kept_items.append(item)
-            kept_ids.add(id(item))
-            needed -= 1
-            if needed == 0:
-                break
+    _restore_minimum_items(
+        kept_items=kept_items,
+        scored_items=scored_items,
+        minimum_count=minimum_count,
+    )
 
     return kept_items
 
@@ -180,34 +189,35 @@ def generate_digest(now: datetime | None = None) -> int:
         except Exception as exc:
             LOGGER.error("X author posts fetch failed: %s", exc)
 
-    all_items: list[dict] = []
-    all_items.extend(hn_items)
-    all_items.extend(trending_items)
-
     # --- AI scoring & filtering ---
     if config.AI_ENABLED:
-        LOGGER.info("AI scoring enabled, scoring %d items", len(all_items))
-        before = len(all_items)
-        before_hn = len(_source_items(all_items, "hacker_news"))
-        before_trending = len(_source_items(all_items, "github_trending"))
-        all_items = filter_ai_items(all_items)
+        before_hn = len(hn_items)
+        before_trending = len(trending_items)
+        before = before_hn + before_trending
+        LOGGER.info("AI scoring enabled, scoring Hacker News %d items", before_hn)
+        hn_items = filter_ai_items(
+            hn_items,
+            minimum_count=config.HN_MIN_ITEMS_AFTER_AI,
+        )
+        LOGGER.info("AI scoring enabled, scoring GitHub Trending %d items", before_trending)
+        trending_items = filter_ai_items(
+            trending_items,
+            minimum_count=config.GITHUB_TRENDING_MIN_ITEMS_AFTER_AI,
+        )
+        after = len(hn_items) + len(trending_items)
         LOGGER.info(
             "AI filter: %d items kept (threshold >= %s), %d removed",
-            len(all_items),
+            after,
             config.AI_SCORE_THRESHOLD,
-            before - len(all_items),
+            before - after,
         )
         LOGGER.info(
             "AI filter by source: Hacker News %d/%d kept, GitHub Trending %d/%d kept",
-            len(_source_items(all_items, "hacker_news")),
+            len(hn_items),
             before_hn,
-            len(_source_items(all_items, "github_trending")),
+            len(trending_items),
             before_trending,
         )
-
-    # Separate back into source-specific lists for the renderer
-    hn_items = [it for it in all_items if it.get("source") == "hacker_news"]
-    trending_items = [it for it in all_items if it.get("source") == "github_trending"]
 
     if successful_sources == 0:
         LOGGER.error("All enabled sources failed; newsletter was not generated")

@@ -157,10 +157,24 @@ Notes:
 - If you prefer a file, set `X_COOKIES_PATH=/absolute/path/to/x-cookies.json` (default fallback is `./x.json`)
 - The cookies must come from a logged-in X browser session
 - If cookies expire, refresh the export and rerun
-- Current default is hardcoded to test `@karpathy` (`33836629`) first
 - If X Web starts rejecting the request, you can optionally set `X_WEB_BEARER_TOKEN` and `X_CLIENT_TRANSACTION_ID` from a browser `Copy as cURL`
 - The default `UserTweets` operation is hardcoded to `x3B_xLqC0yZawOB7WQhaVQ/UserTweets`
 - When both `X_COOKIES` and `X_COOKIES_PATH` are missing/unreadable, the CLI skips the X source and keeps the original two-section output
+
+## Optional AI Filtering Setup
+
+Setting `AI_API_KEY` enables OpenAI-compatible scoring, summarization, and filtering for Hacker News and GitHub Trending. The two sources are scored and filtered separately.
+
+```bash
+AI_API_KEY=sk-...
+AI_BASE_URL=https://api.openai.com/v1
+AI_MODEL=glm-5
+AI_SCORE_THRESHOLD=6.0
+HN_MIN_ITEMS_AFTER_AI=3
+GITHUB_TRENDING_MIN_ITEMS_AFTER_AI=3
+```
+
+`HN_MIN_ITEMS_AFTER_AI` and `GITHUB_TRENDING_MIN_ITEMS_AFTER_AI` keep the top-ranked items for each source when AI scores fall below the threshold.
 
 ## Development
 
@@ -192,5 +206,4 @@ newsletter/
       renderers/
       storage/
   tests/
-  docs/
 ```

@@ -2,7 +2,7 @@
 
 [English README](README.md)
 
-一个本地优先的命令行工具，用来抓取 GitHub Trending 和 Hacker News，并生成稳定的 Markdown newsletter。
+一个本地优先的命令行工具，用来抓取 GitHub Trending、Hacker News 和可选的 X 作者动态，并生成稳定的 Markdown newsletter。
 
 ```text
 daily/YYYY-MM-DD.md
@@ -11,7 +11,7 @@ daily/YYYY-MM-DD.md
 ## 项目作用
 
 - 在你执行 CLI 的当前目录生成每日 newsletter
-- 输出顺序固定为 `GitHub Trending` 在前，`Hacker News` 在后
+- 启用 X 时，输出顺序固定为 `X Posts`、`GitHub Trending`、`Hacker News`
 - 同一天重复执行会覆盖当日文件
 - 单个数据源失败时，仍允许输出部分结果
 - 只有两个数据源都失败时才会返回非零退出码
@@ -80,6 +80,14 @@ newsletter
 ```md
 # Newsletter - 2026-03-25
 
+## X Posts
+
+### Andrej Karpathy (@karpathy)
+
+1. [@karpathy](https://x.com/karpathy/status/1)
+   - Posted: 2026-03-25T08:45:00Z
+   - Text: ...
+
 ## GitHub Trending
 
 1. [owner/repo](https://github.com/owner/repo)
@@ -103,6 +111,7 @@ Generated at: 2026-03-25 09:00:00
 - GitHub Trending 页面提供排名和当日 star 增长
 - GitHub Repo API 提供仓库描述、语言等补充元数据
 - Hacker News 官方 API 提供 top stories 和条目详情
+- 可选 X 作者动态通过已登录浏览器 cookies 从 X Web 获取
 
 只保留 `type == "story"` 的 Hacker News 条目。
 
@@ -113,6 +122,35 @@ Generated at: 2026-03-25 09:00:00
 - 未设置 GitHub token 时，可能会遇到 GitHub API 匿名访问限流
 
 你可以设置 `GITHUB_TOKEN` 或 `GH_TOKEN`，降低匿名访问 GitHub API 时的限流风险。
+
+## 可选 X Posts 设置
+
+如果要追加 `X Posts` section，把已登录 X 浏览器会话的 cookies 放到 `.env`：
+
+```bash
+X_COOKIES='auth_token=...; ct0=...'
+```
+
+也可以使用 cookies 文件：
+
+```bash
+X_COOKIES_PATH=/absolute/path/to/x-cookies.json
+```
+
+缺少或无法读取 X cookies 时，CLI 会跳过 X 来源，保留 GitHub Trending 和 Hacker News 输出。
+
+## 可选 AI 过滤设置
+
+设置 `AI_API_KEY` 后会启用 OpenAI-compatible API，对 Hacker News 和 GitHub Trending 分来源评分、摘要和过滤：
+
+```bash
+AI_API_KEY=sk-...
+AI_BASE_URL=https://api.openai.com/v1
+AI_MODEL=glm-5
+AI_SCORE_THRESHOLD=6.0
+HN_MIN_ITEMS_AFTER_AI=3
+GITHUB_TRENDING_MIN_ITEMS_AFTER_AI=3
+```
 
 ## 开发
 
@@ -144,5 +182,4 @@ newsletter/
       renderers/
       storage/
   tests/
-  docs/
 ```

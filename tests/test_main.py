@@ -7,7 +7,7 @@ import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 SRC_DIR = Path(__file__).resolve().parents[1] / "src"
 if str(SRC_DIR) not in sys.path:
@@ -221,6 +221,107 @@ class MainCLITest(unittest.TestCase):
         self.assertNotIn("HN Story Three", content)
         self.assertIn("example/kept", content)
         self.assertIn("Hacker News 2/3 kept", stdout)
+        self.assertEqual(stderr, "")
+
+    def test_ai_filter_keeps_minimum_github_trending_items(self) -> None:
+        trending_items = [
+            {
+                **make_trending_item(),
+                "title": "example/one",
+                "rank": 1,
+                "meta": {
+                    **make_trending_item()["meta"],
+                    "repo_name": "example/one",
+                },
+            },
+            {
+                **make_trending_item(),
+                "title": "example/two",
+                "rank": 2,
+                "meta": {
+                    **make_trending_item()["meta"],
+                    "repo_name": "example/two",
+                },
+            },
+            {
+                **make_trending_item(),
+                "title": "example/three",
+                "rank": 3,
+                "meta": {
+                    **make_trending_item()["meta"],
+                    "repo_name": "example/three",
+                },
+            },
+        ]
+
+        def fake_score_and_summarize(items: list[dict]) -> list[dict]:
+            scored = []
+            for item in items:
+                scored_item = dict(item)
+                scored_item["ai_score"] = 4.0
+                scored_item["ai_summary"] = item.get("summary", "")
+                scored.append(scored_item)
+            return scored
+
+        with patch.object(digest.config, "AI_ENABLED", True), patch.object(
+            digest.config,
+            "HN_MIN_ITEMS_AFTER_AI",
+            0,
+        ), patch.object(
+            digest.config,
+            "GITHUB_TRENDING_MIN_ITEMS_AFTER_AI",
+            2,
+        ), patch("newsletter.digest.fetch_hn", return_value=[]), patch(
+            "newsletter.digest.fetch_github_trending",
+            return_value=trending_items,
+        ), patch(
+            "newsletter.digest.score_and_summarize",
+            side_effect=fake_score_and_summarize,
+        ):
+            exit_code, stdout, stderr = self.capture_cli(["generate"])
+
+        content = digest.get_output_path(FIXED_NOW).read_text(encoding="utf-8")
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("example/one", content)
+        self.assertIn("example/two", content)
+        self.assertNotIn("example/three", content)
+        self.assertIn("GitHub Trending 2/3 kept", stdout)
+        self.assertEqual(stderr, "")
+
+    def test_ai_filter_scores_sources_separately(self) -> None:
+        hn_items = [{**make_hn_item(), "rank": 1}]
+        trending_items = [{**make_trending_item(), "rank": 1}]
+
+        def fake_score_and_summarize(items: list[dict]) -> list[dict]:
+            scored = []
+            for item in items:
+                scored_item = dict(item)
+                scored_item["ai_score"] = 8.0
+                scored_item["ai_summary"] = item.get("summary", "")
+                scored.append(scored_item)
+            return scored
+
+        score_mock = MagicMock(side_effect=fake_score_and_summarize)
+
+        with patch.object(digest.config, "AI_ENABLED", True), patch(
+            "newsletter.digest.fetch_hn",
+            return_value=hn_items,
+        ), patch(
+            "newsletter.digest.fetch_github_trending",
+            return_value=trending_items,
+        ), patch(
+            "newsletter.digest.score_and_summarize",
+            score_mock,
+        ):
+            exit_code, stdout, stderr = self.capture_cli(["generate"])
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(score_mock.call_count, 2)
+        self.assertEqual(score_mock.call_args_list[0].args[0], hn_items)
+        self.assertEqual(score_mock.call_args_list[1].args[0], trending_items)
+        self.assertIn("AI scoring enabled, scoring Hacker News 1 items", stdout)
+        self.assertIn("AI scoring enabled, scoring GitHub Trending 1 items", stdout)
         self.assertEqual(stderr, "")
 
     def test_generate_fails_when_both_sources_fail(self) -> None:
