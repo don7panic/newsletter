@@ -137,7 +137,12 @@ def _restore_minimum_items(
 
 
 def filter_ai_items(items: list[dict], minimum_count: int = 0) -> list[dict]:
-    scored_items = score_and_summarize(items)
+    scored_items, ai_worked = score_and_summarize(items)
+
+    if not ai_worked:
+        LOGGER.warning("AI scoring failed for all items, skipping filter")
+        return items
+
     kept_items = [
         item
         for item in scored_items

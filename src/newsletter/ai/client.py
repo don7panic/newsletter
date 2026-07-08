@@ -110,7 +110,7 @@ def _call_ai(client: OpenAI, item: dict) -> dict[str, Any] | None:
     return result
 
 
-def score_and_summarize(items: list[dict]) -> list[dict]:
+def score_and_summarize(items: list[dict]) -> tuple[list[dict], bool]:
     """Score and summarize each item using AI.
 
     Each item is enriched with ``ai_score`` (float) and ``ai_summary`` (str).
@@ -121,13 +121,15 @@ def score_and_summarize(items: list[dict]) -> list[dict]:
         items: List of item dicts from fetchers.
 
     Returns:
-        New list of enriched item dicts (same length as input).
+        Tuple of (enriched items, ai_worked). ``ai_worked`` is True if at
+        least one AI call succeeded.
     """
     if not items:
-        return []
+        return [], False
 
     client = _make_client()
     scored: list[dict] = []
+    any_succeeded = False
 
     for item in items:
         result = _call_ai(client, item)
@@ -137,7 +139,8 @@ def score_and_summarize(items: list[dict]) -> list[dict]:
         else:
             item["ai_score"] = float(result.get("score", 5.0))
             item["ai_summary"] = result.get("summary", item.get("summary", ""))
+            any_succeeded = True
 
         scored.append(item)
 
-    return scored
+    return scored, any_succeeded

@@ -30,7 +30,9 @@ class ScoreAndSummarizeTest(unittest.TestCase):
     """Unit tests for the AI scoring & summarization client."""
 
     def test_empty_items(self) -> None:
-        self.assertEqual(score_and_summarize([]), [])
+        result, ai_worked = score_and_summarize([])
+        self.assertEqual(result, [])
+        self.assertFalse(ai_worked)
 
     @patch("newsletter.ai.client.OpenAI")
     def test_successful_scoring(self, mock_openai: MagicMock) -> None:
@@ -45,8 +47,9 @@ class ScoreAndSummarizeTest(unittest.TestCase):
         mock_openai.return_value = mock_client
 
         items = [make_item(summary="some repo description")]
-        result = score_and_summarize(items)
+        result, ai_worked = score_and_summarize(items)
 
+        self.assertTrue(ai_worked)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["ai_score"], 8.0)
         self.assertEqual(result[0]["ai_summary"], "A great new tool.")
@@ -58,8 +61,9 @@ class ScoreAndSummarizeTest(unittest.TestCase):
         mock_openai.return_value = mock_client
 
         items = [make_item(summary="fallback summary")]
-        result = score_and_summarize(items)
+        result, ai_worked = score_and_summarize(items)
 
+        self.assertFalse(ai_worked)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["ai_score"], 5.0)
         self.assertEqual(result[0]["ai_summary"], "fallback summary")
@@ -75,8 +79,9 @@ class ScoreAndSummarizeTest(unittest.TestCase):
         mock_openai.return_value = mock_client
 
         items = [make_item(summary="invalid json fallback")]
-        result = score_and_summarize(items)
+        result, ai_worked = score_and_summarize(items)
 
+        self.assertFalse(ai_worked)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["ai_score"], 5.0)
         self.assertEqual(result[0]["ai_summary"], "invalid json fallback")
@@ -106,8 +111,9 @@ class ScoreAndSummarizeTest(unittest.TestCase):
             make_item(title="First", summary="first summary"),
             make_item(title="Second", summary="second summary"),
         ]
-        result = score_and_summarize(items)
+        result, ai_worked = score_and_summarize(items)
 
+        self.assertTrue(ai_worked)
         self.assertEqual(len(result), 2)
         # First item: fallback
         self.assertEqual(result[0]["ai_score"], 5.0)
@@ -134,7 +140,8 @@ class ScoreAndSummarizeTest(unittest.TestCase):
             summary="Some repo.",
             meta={"language": "Python", "stars_today": 100},
         )]
-        result = score_and_summarize(items)
+        result, ai_worked = score_and_summarize(items)
 
+        self.assertTrue(ai_worked)
         self.assertEqual(result[0]["ai_score"], 7.0)
         self.assertEqual(result[0]["ai_summary"], "A trending project.")
